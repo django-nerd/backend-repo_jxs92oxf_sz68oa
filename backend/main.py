@@ -1,12 +1,10 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from typing import List, Optional
-from bson import ObjectId
 
 from database import db, create_document, get_documents
-from schemas import Product as ProductSchema, Order as OrderSchema, OrderItem as OrderItemSchema
+from schemas import Product as ProductSchema, Order as OrderSchema
 
 app = FastAPI()
 
@@ -59,6 +57,67 @@ def list_products(category: Optional[str] = None, q: Optional[str] = None, limit
             ]
         docs = get_documents("product", filt, limit)
         return [_serialize(d) for d in docs]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/seed")
+def seed_products():
+    """Insert demo products if collection is empty"""
+    try:
+        existing = get_documents("product", {}, limit=1)
+        if existing:
+            return {"status": "ok", "message": "Products already exist"}
+        demo_products = [
+            {
+                "title": "Maggi Bowl (Hot & Fresh)",
+                "description": "Cooked to order at the canteen. Pickup in 10 mins.",
+                "price": 45,
+                "category": "Food",
+                "in_stock": True,
+                "image": "https://images.unsplash.com/photo-1526318472351-c75fcf070305?q=80&w=1200&auto=format&fit=crop",
+                "seller_name": "Campus Canteen"
+            },
+            {
+                "title": "Data Structures Notes (PDF)",
+                "description": "Second-year topper notes. Clean and concise.",
+                "price": 79,
+                "category": "Notes",
+                "in_stock": True,
+                "image": "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?q=80&w=1200&auto=format&fit=crop",
+                "seller_name": "Ananya (CSE)"
+            },
+            {
+                "title": "College Hoodie (Navy)",
+                "description": "Official club merchandise. Sizes S-XL.",
+                "price": 999,
+                "category": "Merch",
+                "in_stock": True,
+                "image": "https://images.unsplash.com/photo-1548883354-7622d03aca27?q=80&w=1200&auto=format&fit=crop",
+                "seller_name": "Design Club"
+            },
+            {
+                "title": "Event Pass - Battle of Bands",
+                "description": "Entry ticket for Saturday 7 PM, Auditorium.",
+                "price": 199,
+                "category": "Events",
+                "in_stock": True,
+                "image": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=1200&auto=format&fit=crop",
+                "seller_name": "Music Club"
+            },
+            {
+                "title": "Exam Kit (Pens + Highlighter)",
+                "description": "Everything you need for finals week.",
+                "price": 129,
+                "category": "Stationery",
+                "in_stock": True,
+                "image": "https://images.unsplash.com/photo-1481070555726-e2fe8357725c?q=80&w=1200&auto=format&fit=crop",
+                "seller_name": "Stationery Shop"
+            }
+        ]
+        for p in demo_products:
+            create_document("product", p)
+        return {"status": "ok", "inserted": len(demo_products)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

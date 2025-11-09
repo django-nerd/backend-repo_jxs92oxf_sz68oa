@@ -12,37 +12,39 @@ Model name is converted to lowercase for the collection name:
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
-# Example schemas (replace with your own):
-
+# Core user schema for potential future auth
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
     name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
+    address: Optional[str] = Field(None, description="Address")
     age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
     is_active: bool = Field(True, description="Whether user is active")
 
+# Product schema for marketplace listings
 class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
     title: str = Field(..., description="Product title")
     description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
+    price: float = Field(..., ge=0, description="Price in INR")
     category: str = Field(..., description="Product category")
     in_stock: bool = Field(True, description="Whether product is in stock")
+    image: Optional[str] = Field(None, description="Primary image URL")
+    seller_name: Optional[str] = Field(None, description="Seller display name")
 
-# Add your own schemas here:
-# --------------------------------------------------
+# Cart item used inside orders
+class OrderItem(BaseModel):
+    product_id: str = Field(..., description="Product document ID")
+    title: str = Field(..., description="Snapshot of product title")
+    price: float = Field(..., ge=0, description="Unit price at checkout")
+    quantity: int = Field(..., ge=1, description="Quantity purchased")
+    image: Optional[str] = Field(None, description="Snapshot of image URL")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+# Order schema for checkout
+class Order(BaseModel):
+    buyer_name: str = Field(..., description="Buyer name")
+    buyer_email: str = Field(..., description="Buyer email")
+    items: List[OrderItem] = Field(..., description="Items in this order")
+    payment_method: str = Field("COD", description="Payment method e.g. UPI, COD")
+    status: str = Field("pending", description="Order status")
+    total_amount: float = Field(..., ge=0, description="Computed total amount")
